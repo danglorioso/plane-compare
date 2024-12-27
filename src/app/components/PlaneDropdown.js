@@ -1,15 +1,29 @@
-'use client'
+'use client';
 import { useState, useEffect } from 'react';
 
 export default function PlaneDropdown({ onPlaneSelect }) {
   const [planes, setPlanes] = useState([]);
 
   useEffect(() => {
-    async function fetchPlanes() {
-      const response = await fetch('/api/planes');
-      const data = await response.json();
-      setPlanes(data.planes);
-    }
+    const fetchPlanes = async () => {
+      try {
+        const response = await fetch('/api/fetchPlanes', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const data = await response.json();
+
+        // Update state with planes
+        setPlanes(data.planes || []); // Default to empty array if planes are missing
+      } catch (error) {
+        console.error('Fetch planes error:', error);
+      }
+    };
 
     fetchPlanes();
   }, []);
@@ -17,9 +31,9 @@ export default function PlaneDropdown({ onPlaneSelect }) {
   return (
     <select onChange={(e) => onPlaneSelect(e.target.value)}>
       <option value="">Select a plane</option>
-      {planes.map((plane) => (
-        <option key={plane.id} value={plane.id}>
-          {plane.name}
+      {planes.map((plane, index) => (
+        <option key={index} value={plane.full_name}>
+          {plane.full_name}
         </option>
       ))}
     </select>
