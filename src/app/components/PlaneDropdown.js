@@ -18,8 +18,8 @@ export default function PlaneDropdown({ onPlaneSelect }) {
 
         const data = await response.json();
 
-        // Update state with planes
-        setPlanes(data.planes || []); // Default to empty array if planes are missing
+        // Extract only the full_name (manufacturer + model) for the dropdown
+        setPlanes(data.planes || []); // Assuming 'planes' is an array of tuples
       } catch (error) {
         console.error('Fetch planes error:', error);
       }
@@ -32,8 +32,9 @@ export default function PlaneDropdown({ onPlaneSelect }) {
     <select onChange={(e) => onPlaneSelect(e.target.value)}>
       <option value="">Select a plane</option>
       {planes.map((plane, index) => (
-        <option key={index} value={plane.full_name}>
-          {plane.full_name}
+        // Use the ICAO code (plane[0]) as the value
+        <option key={index} value={plane[0]}>
+          {plane[1]} {/* Display the concatenated full name */}
         </option>
       ))}
     </select>
