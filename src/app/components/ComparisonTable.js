@@ -9,7 +9,7 @@ export default function ComparisonTable({ plane1Id, plane2Id }) {
   useEffect(() => {
     async function fetchPlaneData(id, setPlane) {
       if (id) {
-        const response = await fetch(`/api/planes?id=${id}`);
+        const response = await fetch(`/api/fetchPlaneData?ids=${id}`);
         const data = await response.json();
         setPlane(data.plane);
       }

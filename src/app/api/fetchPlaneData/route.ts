@@ -1,45 +1,59 @@
-// import { query } from '../db.js';
+import { query } from '../db.js';
 
-// export async function GET(request) {
-//     try {
-//         // Get ICAO codes from the query parameters (e.g., ?planeIds=G450,G650)
-//         const url = new URL(request.url);
-//         const planeIds = url.searchParams.get('planeIds')?.split(',') || [];
+// Define the type for a plane statistic row
+interface PlaneStatistic {
+  icao_code: string;
+  iata_type_code: string;
+  manufacturer: string;
+  model: string;
+  engine_type: string;
+  length_ft: number;
+  height_ft: number;
+  wingspan_ft: number;
+  max_speed_kt: number;
+  ceiling_ft: number;
+  range_nm: number;
+}
 
-//         // Return error if called and no planes selected
-//         if (planeIds.length === 0) {
-//             return new Response(JSON.stringify({ error: 'No planes selected' }), {
-//                 status: 400,
-//             });
-//         }
+// Define the type for the accumulated plane data
+type PlaneData = Record<string, Omit<PlaneStatistic, 'icao_code'>>;
 
-//     // Build a query to fetch data for the selected planes
-//     const placeholders = planeIds.map(() => '?').join(', ');
-//     const queryText = `
-//       SELECT * FROM plane_statistics
-//       WHERE icao_code IN (${placeholders});
-//     `;
+export async function GET(request: Request): Promise<Response> {
+  try {
+    // Parse the query parameters for `id` or `ids`
+    const url = new URL(request.url);
+    const ids = 
+      url.searchParams.get('ids')?.split(',') || 
+      (url.searchParams.get('id') ? [url.searchParams.get('id')] : []);
 
-//     // Fetch the data for the selected planes
-//     const result = await query(queryText, planeIds);
+    // Return early error if no plane IDs provided
+    if (ids.length === 0) {
+      return new Response(JSON.stringify({ error: 'No planes selected' }), {
+        status: 400,
+      });
+    }
 
-//     // Return the data in a structure that supports future flexibility
-//     const planeData = result.reduce((acc, row) => {
-//       const { icao_code, ...statistics } = row;
-//       acc[icao_code] = statistics;
-//       return acc;
-//     }, {});
+    // Build the query using `ANY` operator to fetch multiple planes
+    const queryText = `SELECT * FROM planes WHERE icao_code = ANY($1);`;
 
-//     return new Response(JSON.stringify({ planeData }), {
-//       status: 200,
-//       headers: { 'Content-Type': 'application/json' },
-//     });
+    // Fetch the data for the selected planes
+    const result: PlaneStatistic[] = await query(queryText, [ids]);
 
-//     } catch (error) {
-//         console.error("Database query error:", error);
-//         return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-//           status: 500,
-//         });
-//     }
+    // Structure the data in a flexible format
+    const planeData: PlaneData = result.reduce((acc: PlaneData, row: PlaneStatistic) => {
+      const { icao_code, ...statistics } = row;
+      acc[icao_code] = statistics;
+      return acc;
+    }, {});
 
-// }
+    return new Response(JSON.stringify({ planeData }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Database query error:', error);
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      status: 500,
+    });
+  }
+}
