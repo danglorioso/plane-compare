@@ -1,56 +1,75 @@
-'use client'
+'use client';
 
 import { useState, useEffect } from 'react';
 
 export default function ComparisonTable({ plane1Id, plane2Id }) {
   const [plane1, setPlane1] = useState(null);
   const [plane2, setPlane2] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchPlaneData(id, setPlane) {
-      if (id) {
-        const response = await fetch(`/api/fetchPlaneData?ids=${id}`);
+    // Fetch plane data for the given IDs
+    async function fetchPlaneData(ids, setPlanes) {
+      if (ids.length > 0) {
+        const response = await fetch(`/api/fetchPlaneData?ids=${ids.join(',')}`);
         const data = await response.json();
-        setPlane(data.plane);
+        setPlanes(data.planeData);
       }
     }
 
-    fetchPlaneData(plane1Id, setPlane1);
-    fetchPlaneData(plane2Id, setPlane2);
+    const fetchPlanes = async () => {
+      setLoading(true);
+
+      const ids = [plane1Id, plane2Id].filter(Boolean); // Filter out undefined or null IDs
+      await fetchPlaneData(ids, (data) => {
+        if (data[plane1Id]) setPlane1(data[plane1Id]);
+        if (data[plane2Id]) setPlane2(data[plane2Id]);
+      });
+
+      setLoading(false);
+    };
+
+    fetchPlanes();
   }, [plane1Id, plane2Id]);
 
-  if (!plane1 && !plane2) return <p>Select planes to compare</p>;
+  // Display loading message while fetching data
+  if (loading) return <p>Loading plane data...</p>;
+
+  // Display message if no planes are selected
+  if (!plane1 && !plane2) return <p>Select planes to compare.</p>;
+
+  // Define stats to display
+  const statistics = [
+    { label: 'Manufacturer', key: 'manufacturer' },
+    { label: 'Model', key: 'model' },
+    { label: 'Engine Type', key: 'engine_type' },
+    { label: 'Length (ft)', key: 'length_ft' },
+    { label: 'Height (ft)', key: 'height_ft' },
+    { label: 'Wingspan (ft)', key: 'wingspan_ft' },
+    { label: 'Top Speed (kt)', key: 'max_speed_kt' },
+    { label: 'Ceiling (ft)', key: 'ceiling_ft' },
+    { label: 'Range (nm)', key: 'range_nm' },
+  ];
 
   return (
-    <table className="w-full table-auto border-collapse">
+    <table className="w-full table-auto border-collapse border border-gray-300">
       <thead>
         <tr>
-          <th>Statistic</th>
-          <th>{plane1?.name || 'Plane 1'}</th>
-          <th>{plane2?.name || 'Plane 2'}</th>
+          {/* Title for each column (aircraft name) */}
+          <th className="border border-gray-300 px-4 py-2">Statistic</th>
+          <th className="border border-gray-300 px-4 py-2">{plane1Id || 'Plane 1'}</th>
+          <th className="border border-gray-300 px-4 py-2">{plane2Id || 'Plane 2'}</th>
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>Manufacturer</td>
-          <td>{plane1?.manufacturer || 'N/A'}</td>
-          <td>{plane2?.manufacturer || 'N/A'}</td>
-        </tr>
-        <tr>
-          <td>Top Speed</td>
-          <td>{plane1?.top_speed || 'N/A'}</td>
-          <td>{plane2?.top_speed || 'N/A'}</td>
-        </tr>
-        <tr>
-          <td>Range</td>
-          <td>{plane1?.range || 'N/A'}</td>
-          <td>{plane2?.range || 'N/A'}</td>
-        </tr>
-        <tr>
-          <td>Capacity</td>
-          <td>{plane1?.capacity || 'N/A'}</td>
-          <td>{plane2?.capacity || 'N/A'}</td>
-        </tr>
+        {/* Traverse the 'statistics' array and render a row for each item */}
+        {statistics.map(({ label, key }) => (
+          <tr key={key}>
+            <td className="border border-gray-300 px-4 py-2">{label}</td>
+            <td className="border border-gray-300 px-4 py-2">{plane1?.[key] || 'N/A'}</td>
+            <td className="border border-gray-300 px-4 py-2">{plane2?.[key] || 'N/A'}</td>
+          </tr>
+        ))}
       </tbody>
     </table>
   );
