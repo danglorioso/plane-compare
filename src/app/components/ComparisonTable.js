@@ -51,14 +51,17 @@ export default function ComparisonTable({ plane1Id, plane2Id }) {
     { label: 'Range (nm)', key: 'range_nm' },
   ];
 
+  const plane1Name = plane1?.manufacturer + ' ' + plane1?.model;
+  const plane2Name = plane2?.manufacturer + ' ' + plane2?.model;
+
   return (
     <table className="w-full table-auto border-collapse border border-gray-300">
       <thead>
         <tr>
           {/* Title for each column (aircraft name) */}
           <th className="border border-gray-300 px-4 py-2">Statistic</th>
-          <th className="border border-gray-300 px-4 py-2">{plane1Id || 'Plane 1'}</th>
-          <th className="border border-gray-300 px-4 py-2">{plane2Id || 'Plane 2'}</th>
+          <th className="border border-gray-300 px-4 py-2">{plane1Name || 'Plane 1'}</th>
+          <th className="border border-gray-300 px-4 py-2">{plane2Name || 'Plane 2'}</th>
         </tr>
       </thead>
       <tbody>
